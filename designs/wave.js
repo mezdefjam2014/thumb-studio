@@ -1,6 +1,6 @@
 export default {
   name: 'WAVEFORM',
-  types: ['beats', 'packs', 'samples', 'video', 'podcast', 'custom'],
+  types: ['beats', 'packs', 'samples', 'video', 'podcast'],
   ratios: ['16:9', '9:16'],
   draw(x, W, H, d, K) {
     const A = K.artBox(), s = A.size * .7, n = 36, bw = (A.size * 1.1) / n;

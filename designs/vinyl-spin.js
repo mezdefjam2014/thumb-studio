@@ -1,6 +1,6 @@
 export default {
   name: 'VINYL SPIN',
-  types: ['beats', 'packs', 'samples', 'video', 'custom'],
+  types: ['beats', 'packs', 'samples', 'video'],
   ratios: ['16:9', '9:16'],
   draw(x, W, H, d, K) {
     const A = K.artBox(), s = A.size * .82, off = A.size * .16;

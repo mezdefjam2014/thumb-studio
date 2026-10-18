@@ -36,3 +36,4 @@ main{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:16px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chips i{font-style:normal;font-size:12px;background:#1d1d24;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer}
 .chips i:hover{border-color:#ff6b6b;text-decoration:line-through}
 @media (max-width:760px){.packs{grid-template-columns:1fr}}
+[hidden]{display:none!important}

@@ -1,6 +1,6 @@
 export default {
   name: 'STACK',
-  types: ['packs', 'samples', 'beats', 'custom'],
+  types: ['*'],
   ratios: ['16:9', '9:16'],
   draw(x, W, H, d, K) {
     const A = K.artBox(), s = A.size * .72, o = A.size * .07, r = (K.rnd() - .5) * .06;

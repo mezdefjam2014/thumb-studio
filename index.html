@@ -4,20 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thumb Studio</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <header class="top">
   <b class="logo">THUMB<span>STUDIO</span></b>
-  <select id="type">
-    <option value="beats">Beat</option>
-    <option value="packs" selected>Sample Pack</option>
-    <option value="samples">Single Sample</option>
-    <option value="video">Music Video</option>
-    <option value="podcast">Podcast</option>
-    <option value="product">Product</option>
-    <option value="custom">Custom</option>
-  </select>
+  <select id="type"></select>
   <div class="seg" id="ratio">
     <button data-r="16:9" class="on">16:9</button><button data-r="9:16">9:16</button>
   </div>
@@ -27,20 +19,21 @@
   <aside class="panel" id="panel">
     <label class="drop" id="drop">
       <input type="file" id="cover" accept="image/*" hidden>
-      <span id="dropTxt">Drop cover art or click</span>
+      <span id="dropTxt">Drop image (cover, screenshot, photo) or click</span>
     </label>
-    <label>Title<input id="title" value="Midnight Soul Chops"></label>
+    <label>Title<input id="title" value="I Survived 100 Days"></label>
     <label>Label (custom type)<input id="label" placeholder="auto from type"></label>
-    <label>Footer<input id="footer" value="YOURSITE.COM · ROYALTY-FREE"></label>
+    <label>Footer<input id="footer" value="YOURCHANNEL"></label>
     <label>Accent<input id="accent" type="color" value="#e0242f"></label>
-    <label>Artist / "type beat" name<input id="artist" placeholder="optional"></label>
+    <label data-f="name"><span>Name</span><input id="artist" placeholder="optional"></label>
     <div class="row">
-      <label>Genre<input id="genre" value="Soul"></label>
-      <label>Mood<input id="mood" value="Dark"></label>
+      <label data-f="cat"><span>Topic</span><input id="genre"></label>
+      <label data-f="mood"><span>Hook</span><input id="mood"></label>
     </div>
     <div class="row">
-      <label>BPM<input id="bpm" inputmode="numeric" value="88"></label>
-      <label>Key<input id="key" value="C Minor"></label>
+      <label data-f="bpm"><span>BPM</span><input id="bpm" inputmode="numeric"></label>
+      <label data-f="key"><span>Key</span><input id="key"></label>
+      <label data-f="ep"><span>Episode #</span><input id="ep" inputmode="numeric"></label>
     </div>
     <label>Link<input id="link" placeholder="https://yoursite.com/item"></label>
   </aside>
@@ -54,6 +47,6 @@
     <section class="packs" id="packs"></section>
   </div>
 </main>
-<script type="module" src="app.js?v=4"></script>
+<script type="module" src="app.js?v=7"></script>
 </body>
 </html>

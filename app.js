@@ -4,21 +4,17 @@ import { makePackage } from './core/package.js';
 import { tagLen } from './core/tags.js';
 import { rng } from './core/kit.js';
 
-const TYPES = {
-  beats: ['TYPE BEAT', 'NEW BEAT'], packs: ['SAMPLE PACK', 'NEW SAMPLE PACK'],
-  samples: ['SINGLE SAMPLE', 'NEW SAMPLE'], video: ['MUSIC VIDEO', 'NEW VIDEO'],
-  podcast: ['PODCAST', 'NEW EPISODE'], product: ['PRODUCT', 'NEW DROP'], custom: ['', 'NEW']
-};
+import { WORDS } from './core/words.js';
 const $ = (id) => document.getElementById(id);
 const seed = () => (Math.random() * 1e9) | 0;
 const S = { ratio: '16:9', cover: null, seeds: designs.map(seed), locks: new Set(), picked: -1 };
 
 function data(i) {
-  const type = $('type').value, [lab, kick] = TYPES[type];
+  const type = $('type').value, w = WORDS[type], lab = w.label, kick = w.kicker;
   return {
     title: $('title').value.trim().toUpperCase() || 'UNTITLED',
     label: ($('label').value.trim() || lab).toUpperCase(),
-    kicker: kick, footer: $('footer').value.trim(), cover: S.cover,
+    kicker: ($('ep').value.trim() && w.f.ep ? `${kick} · ${w.f.ep.replace('#', $('ep').value.trim())}` : kick).toUpperCase(), footer: $('footer').value.trim(), cover: S.cover,
     accent: $('accent').value, type, seed: S.seeds[i]
   };
 }
@@ -66,8 +62,8 @@ function loadCover(file) {
 
 // ---- YouTube packages ----
 const input = () => {
-  const v = (id) => $(id).value.trim();
-  return { title: v('title') || 'Untitled', type: $('type').value, artist: v('artist'), genre: v('genre'), mood: v('mood'), bpm: v('bpm'), key: v('key'), link: v('link'), footer: v('footer') };
+  const v = (id) => $(id).value.trim(), f = WORDS[$('type').value].f;
+  return { title: v('title') || 'Untitled', type: $('type').value, artist: v('artist'), genre: v('genre'), mood: v('mood'), bpm: f.bpm ? v('bpm') : '', key: f.key ? v('key') : '', ep: f.ep ? v('ep') : '', epLabel: f.ep || '', link: v('link'), footer: v('footer') };
 };
 function genPacks() { const off = seed(); S.pkgs = Array.from({ length: +$('count').value }, (_, n) => makePackage(input(), rng(seed()), off + n)); renderPacks(); }
 
@@ -105,12 +101,22 @@ function renderPacks() {
 S.pkgs = [];
 $('regen').onclick = genPacks;
 $('count').onchange = genPacks;
-['artist', 'genre', 'mood', 'bpm', 'key', 'link'].forEach((id) => $(id).addEventListener('input', () => { clearTimeout(t); t = setTimeout(genPacks, 300); }));
+['artist', 'genre', 'mood', 'bpm', 'key', 'ep', 'link'].forEach((id) => $(id).addEventListener('input', () => { clearTimeout(t); t = setTimeout(genPacks, 300); }));
 
 let t;
 const later = () => { clearTimeout(t); t = setTimeout(() => { render(); genPacks(); }, 150); };
-['title', 'label', 'footer', 'accent'].forEach((id) => $(id).addEventListener('input', later));
-$('type').onchange = () => { render(); genPacks(); };
+['title', 'label', 'footer', 'accent', 'ep'].forEach((id) => $(id).addEventListener('input', later));
+// Type select grouped Music / Video; fields relabel per type.
+const groups = {};
+for (const [id, w] of Object.entries(WORDS)) (groups[w.group] ||= []).push(`<option value="${id}">${w.label || 'Custom'}</option>`);
+$('type').innerHTML = Object.entries(groups).map(([g, o]) => `<optgroup label="${g}">${o.join('')}</optgroup>`).join('');
+$('type').value = 'gaming';
+function fields() {
+  const f = WORDS[$('type').value].f;
+  document.querySelectorAll('[data-f]').forEach((l) => { const v = f[l.dataset.f]; l.hidden = !v; if (v) l.firstChild.textContent = v === 1 ? l.dataset.f.toUpperCase() : v; });
+}
+fields();
+$('type').onchange = () => { fields(); render(); genPacks(); };
 $('ratio').onclick = (e) => {
   const r = e.target.dataset.r; if (!r) return;
   S.ratio = r; [...$('ratio').children].forEach((b) => b.classList.toggle('on', b.dataset.r === r)); render();
