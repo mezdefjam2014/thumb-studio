@@ -116,6 +116,8 @@ export function pop(x, W, H, d, K, P) {
     }
     lines.forEach((l, i) => {
       const y = (i - (lines.length - 1) / 2) * lh + size * .04;
+      if (o.ext) { x.fillStyle = o.extC || P.st; for (let e = o.ext; e > 0; e -= 1) x.fillText(l, ax + e * u * .6, y + e * u); }
+      if (o.glow) { x.save(); x.shadowColor = o.glow; x.shadowBlur = size * .25; x.fillStyle = o.glow; x.fillText(l, ax, y); x.restore(); }
       if (!o.plate) {
         x.strokeStyle = o.stroke || P.st; x.lineWidth = size * (o.sw ?? .16);
         x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowOffsetY = size * .07; x.shadowBlur = size * .05;
