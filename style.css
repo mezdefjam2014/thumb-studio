@@ -23,3 +23,16 @@ main{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:16px}
 .card .bar span{margin-right:auto}.card .bar button{padding:4px 8px;font-size:12px}
 .card .bar .locked{background:var(--accent)}
 @media (max-width:760px){main{grid-template-columns:1fr}.panel{position:static}.grid,.grid.tall{grid-template-columns:1fr}.top{flex-wrap:wrap}}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row input{width:100%}
+.right{min-width:0;display:flex;flex-direction:column;gap:16px}
+.phead{display:flex;gap:10px;align-items:center;margin-top:8px;letter-spacing:.1em}.phead b{margin-right:auto}
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px}
+.pk{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.pk canvas{width:100%;border-radius:6px;display:block}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld .h{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);letter-spacing:.08em}.fld .h span{margin-left:auto}
+.fld .h button{padding:2px 8px;font-size:11px}.fld .h .bad{color:#ff6b6b}
+.fld textarea{background:#0d0d11;border:1px solid var(--line);border-radius:6px;color:var(--text);padding:8px;font-family:inherit;font-size:13px;line-height:1.4;resize:vertical;width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips i{font-style:normal;font-size:12px;background:#1d1d24;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer}
+.chips i:hover{border-color:#ff6b6b;text-decoration:line-through}
+@media (max-width:760px){.packs{grid-template-columns:1fr}}

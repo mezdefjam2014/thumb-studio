@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thumb Studio</title>
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <header class="top">
@@ -33,9 +33,27 @@
     <label>Label (custom type)<input id="label" placeholder="auto from type"></label>
     <label>Footer<input id="footer" value="YOURSITE.COM · ROYALTY-FREE"></label>
     <label>Accent<input id="accent" type="color" value="#e0242f"></label>
+    <label>Artist / "type beat" name<input id="artist" placeholder="optional"></label>
+    <div class="row">
+      <label>Genre<input id="genre" value="Soul"></label>
+      <label>Mood<input id="mood" value="Dark"></label>
+    </div>
+    <div class="row">
+      <label>BPM<input id="bpm" inputmode="numeric" value="88"></label>
+      <label>Key<input id="key" value="C Minor"></label>
+    </div>
+    <label>Link<input id="link" placeholder="https://yoursite.com/item"></label>
   </aside>
-  <section class="grid" id="grid"></section>
+  <div class="right">
+    <section class="grid" id="grid"></section>
+    <div class="phead">
+      <b>YOUTUBE PACKAGES</b>
+      <select id="count"><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+      <button id="regen">REGENERATE</button>
+    </div>
+    <section class="packs" id="packs"></section>
+  </div>
 </main>
-<script type="module" src="app.js?v=1"></script>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

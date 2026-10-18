@@ -1,5 +1,8 @@
 import designs from './designs/index.js';
 import { make } from './core/render.js';
+import { makePackage } from './core/package.js';
+import { tagLen } from './core/tags.js';
+import { rng } from './core/kit.js';
 
 const TYPES = {
   beats: ['TYPE BEAT', 'NEW BEAT'], packs: ['SAMPLE PACK', 'NEW SAMPLE PACK'],
@@ -38,7 +41,7 @@ function render() {
     card.onclick = (e) => {
       if (e.target.closest('.lk')) { S.locks.has(i) ? S.locks.delete(i) : S.locks.add(i); return render(); }
       if (e.target.closest('.dl')) return download(cv, dz);
-      S.picked = S.picked === i ? -1 : i; render();
+      S.picked = S.picked === i ? -1 : i; render(); renderPacks();
     };
     grid.append(card);
   });
@@ -57,14 +60,57 @@ function download(cv, dz) {
 function loadCover(file) {
   if (!file || !file.type.startsWith('image/')) return;
   const url = URL.createObjectURL(file), img = new Image();
-  img.onload = () => { S.cover = img; $('drop').style.backgroundImage = `url(${url})`; $('dropTxt').textContent = ''; render(); };
+  img.onload = () => { S.cover = img; $('drop').style.backgroundImage = `url(${url})`; $('dropTxt').textContent = ''; render(); renderPacks(); };
   img.src = url;
 }
 
+// ---- YouTube packages ----
+const input = () => {
+  const v = (id) => $(id).value.trim();
+  return { title: v('title') || 'Untitled', type: $('type').value, artist: v('artist'), genre: v('genre'), mood: v('mood'), bpm: v('bpm'), key: v('key'), link: v('link'), footer: v('footer') };
+};
+function genPacks() { const off = seed(); S.pkgs = Array.from({ length: +$('count').value }, (_, n) => makePackage(input(), rng(seed()), off + n)); renderPacks(); }
+
+const LIMITS = { title: 100, desc: 5000, pin: 0, thumb: 0 };
+function field(name, key, pk) {
+  const el = document.createElement('div'); el.className = 'fld';
+  const n = pk[key].length, lim = LIMITS[key];
+  el.innerHTML = `<div class="h">${name}<span class="${lim && n > lim ? 'bad' : ''}">${lim ? n + '/' + lim : ''}</span><button>COPY</button></div><textarea rows="${key === 'desc' ? 8 : 2}"></textarea>`;
+  const ta = el.querySelector('textarea'); ta.value = pk[key];
+  ta.oninput = () => { pk[key] = ta.value; if (lim) el.querySelector('span').textContent = ta.value.length + '/' + lim; };
+  el.querySelector('button').onclick = (e) => copy(pk[key], e.target);
+  return el;
+}
+function copy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => { btn.textContent = 'COPIED'; setTimeout(() => btn.textContent = 'COPY', 1200); });
+}
+function renderPacks() {
+  const box = $('packs'); box.innerHTML = '';
+  const list = designs.map((dz, i) => i).filter((i) => fits(designs[i], $('type').value));
+  S.pkgs.forEach((pk, n) => {
+    const card = document.createElement('div'); card.className = 'pk';
+    const di = S.picked >= 0 ? S.picked : list[n % list.length];
+    const thumbData = { ...data(di), title: pk.thumb };
+    card.append(make(designs[di], '16:9', thumbData));
+    card.append(field('TITLE', 'title', pk), field('DESCRIPTION', 'desc', pk));
+    const tg = document.createElement('div'); tg.className = 'fld';
+    const len = tagLen(pk.tags);
+    tg.innerHTML = `<div class="h">TAGS<span class="${len > 500 ? 'bad' : ''}">${len}/500</span><button>COPY</button></div><div class="chips"></div>`;
+    pk.tags.forEach((t, j) => { const c = document.createElement('i'); c.textContent = t; c.title = 'Remove'; c.onclick = () => { pk.tags.splice(j, 1); renderPacks(); }; tg.lastChild.append(c); });
+    tg.querySelector('button').onclick = (e) => copy(pk.tags.join(', '), e.target);
+    card.append(tg, field('PINNED COMMENT', 'pin', pk), field('THUMBNAIL TEXT', 'thumb', pk));
+    box.append(card);
+  });
+}
+S.pkgs = [];
+$('regen').onclick = genPacks;
+$('count').onchange = genPacks;
+['artist', 'genre', 'mood', 'bpm', 'key', 'link'].forEach((id) => $(id).addEventListener('input', () => { clearTimeout(t); t = setTimeout(genPacks, 300); }));
+
 let t;
-const later = () => { clearTimeout(t); t = setTimeout(render, 150); };
+const later = () => { clearTimeout(t); t = setTimeout(() => { render(); genPacks(); }, 150); };
 ['title', 'label', 'footer', 'accent'].forEach((id) => $(id).addEventListener('input', later));
-$('type').onchange = render;
+$('type').onchange = () => { render(); genPacks(); };
 $('ratio').onclick = (e) => {
   const r = e.target.dataset.r; if (!r) return;
   S.ratio = r; [...$('ratio').children].forEach((b) => b.classList.toggle('on', b.dataset.r === r)); render();
@@ -76,4 +122,4 @@ drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); loadCover(e.dataTransfer.files[0]); };
 
-document.fonts.ready.then(render);
+document.fonts.ready.then(() => { render(); genPacks(); });
