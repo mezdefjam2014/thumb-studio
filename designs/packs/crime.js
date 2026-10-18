@@ -20,6 +20,12 @@ function crime(x, W, H, d, K, P) {
   U.room = (o = {}) => {
     const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, P.bg[1]); g.addColorStop(1, '#020203'); x.fillStyle = g; x.fillRect(0, 0, W, H);
     if (d.cover && o.photo !== false) { x.save(); x.globalAlpha = o.pa ?? .55; x.filter = `${DESAT} blur(${(o.blur ?? 2) * u}px)`; cover(d.cover, 0, 0, W, H); x.restore(); U.tint(P.bg[1], .55, 'multiply'); }
+    else if (d.bg) { // built-in cinematic plate: seed picks the crop, pushed in + tilted, heavy blur, noir grade
+      const r = ((d.seed || 0) * 9301 + 49297) % 233280 / 233280, z = 1.25 + r * .2, rot = (r - .5) * .06;
+      x.save(); x.globalAlpha = .78; x.filter = `saturate(.75) contrast(1.15) brightness(.75) blur(${7 * u}px)`;
+      x.translate(W / 2 + (r - .5) * W * .12, H / 2 + (.5 - r) * H * .08); x.rotate(rot); cover(d.bg, -W * z / 2, -H * z / 2, W * z, H * z); x.restore();
+      U.tint(P.bg[1], .38, 'multiply');
+    }
     U.glow(W * (o.lx ?? .5), H * (o.ly ?? .3), Math.max(W, H) * (o.lr ?? .55), P.bg[0], o.la ?? .8);
   };
   U.haze = (a = .22, y0 = 0, y1 = H, col = P.light) => {
@@ -216,6 +222,15 @@ const EVID = ['handcuffs', 'cassette', 'bullets', 'vhs', 'shotgun-shells', 'fbi-
 const PAPERS = ['newspaper-bundle', 'newspapers', 'torn-newspaper'];
 const FILES = ['archive-file', 'case-file', 'fbi-folder', 'case-book'];
 // A name may be a list: the template's seed picks one, so SHUFFLE varies the set dressing.
+const BG = { // background plates (assets/props/crime-bg) per layout; the seed picks one
+  'MUGSHOT': ['blood-grunge', 'newspaper-wall', 'dark-board'],
+  'REDACTED FILE': ['desk-evidence', 'newspaper-wall', 'collage-board'],
+  'TAPE CROSS': ['red-tape', 'cuffs-lights'],
+  'SILHOUETTE': ['dark-board', 'cuffs-lights', 'headlines'],
+  'VICTIM VS SUSPECT': ['collage-board', 'headlines', 'dark-board'],
+  'EVIDENCE': ['desk-evidence', 'blood-grunge'],
+  'HEADLINE': ['headlines', 'newspaper-wall', 'collage-board']
+};
 const DRESS = {
   'MUGSHOT': { wide: [[['badge-wallet', 'fbi-badge'], .84, .74, .28, .12]], tall: [[['badge-wallet', 'fbi-badge'], .76, .32, .1, .12]] },
   'REDACTED FILE': { wide: [['magnifier', .66, 1.02, .55, .35]], tall: [['magnifier', .7, .88, .22, .35]] },
@@ -229,7 +244,8 @@ const DRESS = {
 };
 const T = (name, draw) => ({ name, niche: 'crime', types: ['*'], ratios: ['16:9', '9:16'], draw(x, W, H, d, K, P) {
   const R = DRESS[name] || {}, pr = d.prop || (() => null);
-  const dd = R.item && !d.item ? { ...d, item: pr('crime', R.item[(d.seed || 0) % R.item.length]) } : d;
+  const sd = d.seed || 0, bgs = BG[name];
+  const dd = { ...d, item: d.item || (R.item ? pr('crime', R.item[sd % R.item.length]) : null), bg: bgs ? pr('crime-bg', bgs[sd % bgs.length]) : null };
   const U = crime(x, W, H, dd, K, P), end = U.end;
   U.end = (o) => { // dress the set just before the grade so props share the scene's light
     if (!d.item) for (const [n, cx, b, h, rot] of (K.wide ? R.wide : R.tall) || []) {
