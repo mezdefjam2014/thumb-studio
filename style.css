@@ -1,0 +1,25 @@
+:root{--bg:#0a0a0d;--panel:#131318;--line:#24242c;--text:#ececf1;--dim:#8a8a96;--accent:#e0242f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 Inter,"Segoe UI",system-ui,sans-serif}
+button,select,input{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;padding:12px 16px;background:rgba(10,10,13,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.logo{letter-spacing:.12em;margin-right:auto}.logo span{color:var(--accent)}
+select,button,input{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+button{cursor:pointer;font-weight:600;letter-spacing:.04em}button:hover{border-color:var(--dim)}
+.seg{display:flex}.seg button{border-radius:0}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.seg .on,#shuffle{background:var(--accent);border-color:var(--accent)}
+main{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:16px}
+.panel{display:flex;flex-direction:column;gap:12px;align-self:start;position:sticky;top:72px}
+.panel label{display:flex;flex-direction:column;gap:4px;color:var(--dim);font-size:12px}
+.panel input{color:var(--text)}input[type=color]{height:40px;padding:2px}
+.drop{border:1px dashed var(--dim);border-radius:10px;min-height:120px;align-items:center;justify-content:center;cursor:pointer;text-align:center;background-size:cover;background-position:center}
+.drop.over{border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-content:start}
+.grid.tall{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer}
+.card.picked{border-color:var(--accent)}
+.card canvas{display:block;width:100%;height:auto}
+.card .bar{display:flex;align-items:center;gap:6px;padding:8px 10px;font-size:12px;font-weight:600;letter-spacing:.06em}
+.card .bar span{margin-right:auto}.card .bar button{padding:4px 8px;font-size:12px}
+.card .bar .locked{background:var(--accent)}
+@media (max-width:760px){main{grid-template-columns:1fr}.panel{position:static}.grid,.grid.tall{grid-template-columns:1fr}.top{flex-wrap:wrap}}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thumb Studio</title>
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<header class="top">
+  <b class="logo">THUMB<span>STUDIO</span></b>
+  <select id="type">
+    <option value="beats">Beat</option>
+    <option value="packs" selected>Sample Pack</option>
+    <option value="samples">Single Sample</option>
+    <option value="video">Music Video</option>
+    <option value="podcast">Podcast</option>
+    <option value="product">Product</option>
+    <option value="custom">Custom</option>
+  </select>
+  <div class="seg" id="ratio">
+    <button data-r="16:9" class="on">16:9</button><button data-r="9:16">9:16</button>
+  </div>
+  <button id="shuffle">SHUFFLE</button>
+</header>
+<main>
+  <aside class="panel" id="panel">
+    <label class="drop" id="drop">
+      <input type="file" id="cover" accept="image/*" hidden>
+      <span id="dropTxt">Drop cover art or click</span>
+    </label>
+    <label>Title<input id="title" value="Midnight Soul Chops"></label>
+    <label>Label (custom type)<input id="label" placeholder="auto from type"></label>
+    <label>Footer<input id="footer" value="YOURSITE.COM · ROYALTY-FREE"></label>
+    <label>Accent<input id="accent" type="color" value="#e0242f"></label>
+  </aside>
+  <section class="grid" id="grid"></section>
+</main>
+<script type="module" src="app.js?v=1"></script>
+</body>
+</html>
