@@ -1,6 +1,7 @@
 // "Loud" kit for high-CTR styles: outlined cut-outs, huge stroked words, rays, arrows, rings, badges.
 // Use: const U = pop(x, W, H, d, K, P). Boxes are fractions [x, y, w, h] of the frame.
 const F = 'Anton, Impact, "Arial Narrow", sans-serif';
+export const TYPE = '"Courier New", Courier, monospace';
 
 export function pop(x, W, H, d, K, P) {
   const u = Math.min(W, H) / 720, U = { u };
@@ -88,9 +89,9 @@ export function pop(x, W, H, d, K, P) {
     const X = cx - oc.width / 2, Y = bottom - h - p;
     if (o.rim !== false) U.glow(cx, bottom - h * .55, h * .62, o.rim || P.pop, .55);
     x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 40 * u; x.shadowOffsetY = 14 * u;
-    x.drawImage(sil, X, Y); x.restore();
-    for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; x.drawImage(sil, X + Math.cos(a) * ow, Y + Math.sin(a) * ow); }
-    x.save(); x.filter = 'brightness(1.06) saturate(1.2) contrast(1.05)'; x.drawImage(oc, X, Y); x.restore();
+    if (ow > 0 || o.shadow !== false) x.drawImage(ow > 0 ? sil : oc, X, Y); x.restore();
+    if (ow > 0) for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; x.drawImage(sil, X + Math.cos(a) * ow, Y + Math.sin(a) * ow); }
+    x.save(); x.filter = o.filter || 'brightness(1.06) saturate(1.2) contrast(1.05)'; x.drawImage(oc, X, Y); x.restore();
   };
 
   // Huge stroked words fitted into box b (1..maxLines lines). opts: align, fill, stroke, rot, maxLines, plate
@@ -100,12 +101,12 @@ export function pop(x, W, H, d, K, P) {
     for (let n = 1; n <= Math.min(max, words.length); n++) {
       const per = Math.ceil(words.length / n), L = [];
       for (let i = 0; i < words.length; i += per) L.push(words.slice(i, i + per).join(' '));
-      let sz = b.h / (L.length * .98); x.font = `${sz}px ${F}`;
+      let sz = b.h / (L.length * .98); x.font = `${o.weight || ''} ${sz}px ${o.font || F}`;
       const wMax = Math.max(...L.map((l) => x.measureText(l).width)) * 1.1; if (wMax > b.w) sz *= b.w / wMax;
       if (sz > size) { size = sz; lines = L; }
     }
     x.save(); x.translate(b.x + b.w / 2, b.y + b.h / 2); x.rotate(o.rot || 0);
-    x.font = `${size}px ${F}`; x.textAlign = al; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.font = `${o.weight || ''} ${size}px ${o.font || F}`; x.textAlign = al; x.textBaseline = 'middle'; x.lineJoin = 'round';
     const ax = al === 'left' ? -b.w / 2 + size * .06 : al === 'right' ? b.w / 2 - size * .06 : 0, lh = size * .98;
     if (o.plate) {
       const tw = Math.max(...lines.map((l) => x.measureText(l).width)), ph2 = lines.length * lh + size * .2, px = size * .25;
@@ -116,11 +117,12 @@ export function pop(x, W, H, d, K, P) {
     lines.forEach((l, i) => {
       const y = (i - (lines.length - 1) / 2) * lh + size * .04;
       if (!o.plate) {
-        x.strokeStyle = o.stroke || P.st; x.lineWidth = size * .16;
+        x.strokeStyle = o.stroke || P.st; x.lineWidth = size * (o.sw ?? .16);
         x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowOffsetY = size * .07; x.shadowBlur = size * .05;
         x.strokeText(l, ax, y); x.shadowColor = 'transparent';
       }
       x.fillStyle = o.fill || P.fg; x.fillText(l, ax, y);
+      if (o.hi && i === lines.length - 1) { const ws = l.split(' '), last = ws.pop(), pre = ws.length ? ws.join(' ') + ' ' : ''; const w0 = x.measureText(pre).width, wl = x.measureText(last).width, tw = w0 + wl; const sx = al === 'left' ? ax : al === 'right' ? ax - tw : -tw / 2; x.textAlign = 'left'; x.fillStyle = o.hi; x.fillText(last, sx + w0, y); x.textAlign = al; }
     });
     x.restore();
     return size;
@@ -199,7 +201,7 @@ export function pop(x, W, H, d, K, P) {
     U.glow(W * (o.lx ?? .85), H * (o.ly ?? .1), Math.max(W, H) * .45, P.bg[0], .22); x.restore();
     const g = x.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62);
     g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${o.vig ?? .45})`); x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.save(); x.globalAlpha = .05; x.fillStyle = grain(); x.fillRect(0, 0, W, H); x.restore();
+    x.save(); x.globalAlpha = o.grain ?? .05; x.fillStyle = grain(); x.fillRect(0, 0, W, H); x.restore();
   };
   let grainPat;
   const grain = () => {
