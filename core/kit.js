@@ -76,6 +76,20 @@ export function makeKit(x, W, H, d) {
     x.restore();
   };
 
+  // Cover cropped to fill a box (no shadow); placeholder gradient without art.
+  K.coverIn = (bx, by, bw, bh) => {
+    x.save(); x.beginPath(); x.rect(bx, by, bw, bh); x.clip();
+    if (d.cover) fill(d.cover, bx, by, bw, bh);
+    else { const g = x.createLinearGradient(bx, by, bx + bw, by + bh); g.addColorStop(0, A); g.addColorStop(1, '#120608'); x.fillStyle = g; x.fillRect(bx, by, bw, bh); }
+    x.restore();
+  };
+
+  // Accent dot grid in a box.
+  K.dots = (bx, by, bw, bh, step = 18, a = .25) => {
+    x.fillStyle = hexA(A, a); const s = step * k;
+    for (let yy = by; yy < by + bh; yy += s) for (let xx = bx; xx < bx + bw; xx += s) { x.beginPath(); x.arc(xx, yy, s * .18, 0, 7); x.fill(); }
+  };
+
   // Procedural vinyl (no image asset needed).
   K.record = (cx, cy, size, rot = 0) => {
     const r = size / 2;
