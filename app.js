@@ -3,44 +3,55 @@ import { make } from './core/render.js';
 import { makePackage } from './core/package.js';
 import { tagLen } from './core/tags.js';
 import { rng } from './core/kit.js';
+import { cutout } from './core/cutout.js';
 
 import { WORDS } from './core/words.js';
 const $ = (id) => document.getElementById(id);
 const seed = () => (Math.random() * 1e9) | 0;
-const S = { ratio: '16:9', cover: null, seeds: designs.map(seed), locks: new Set(), picked: -1 };
+const S = { ratio: '16:9', cover: null, person: null, item: null, seeds: designs.map(seed), locks: new Set(), picked: -1 };
 
 function data(i) {
   const type = $('type').value, w = WORDS[type], lab = w.label, kick = w.kicker;
   return {
     title: $('title').value.trim().toUpperCase() || 'UNTITLED',
     label: ($('label').value.trim() || lab).toUpperCase(),
-    kicker: ($('ep').value.trim() && w.f.ep ? `${kick} · ${w.f.ep.replace('#', $('ep').value.trim())}` : kick).toUpperCase(), footer: $('footer').value.trim(), cover: S.cover,
+    kicker: ($('ep').value.trim() && w.f.ep ? `${kick} · ${w.f.ep.replace('#', $('ep').value.trim())}` : kick).toUpperCase(), footer: $('footer').value.trim(), cover: S.cover, person: S.person, person2: S.person2, item: S.item,
+    big: ($('big').value.trim() || $('title').value.trim().split(/\s+/).slice(0, 3).join(' ')).toUpperCase(),
     accent: $('accent').value, type, seed: S.seeds[i]
   };
 }
-const fits = (dz, type) => dz.ratios.includes(S.ratio) && (dz.types.includes('*') || dz.types.includes(type));
+const fits = (dz, type) => dz.ratios.includes(S.ratio) && (dz.types.includes('*') || dz.types.includes(type)) && ($('niche').value === '*' || dz.niche === $('niche').value);
+
+// Cards draw only when scrolled into view (hundreds of templates).
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (!e.isIntersecting) return;
+  io.unobserve(e.target); const i = +e.target.dataset.i;
+  make(designs[i], S.ratio, data(i), e.target);
+}), { rootMargin: '400px' });
 
 function render() {
   const grid = $('grid'), type = $('type').value;
   grid.className = 'grid' + (S.ratio === '9:16' ? ' tall' : '');
-  grid.innerHTML = '';
+  grid.innerHTML = ''; io.disconnect();
   document.documentElement.style.setProperty('--accent', $('accent').value);
+  let n = 0;
   designs.forEach((dz, i) => {
-    if (!fits(dz, type)) return;
+    if (!fits(dz, type)) return; n++;
     const card = document.createElement('div');
     card.className = 'card' + (S.picked === i ? ' picked' : '');
-    const cv = make(dz, S.ratio, data(i));
-    card.append(cv);
+    const cv = document.createElement('canvas'); cv.dataset.i = i;
+    card.append(cv); io.observe(cv);
     const bar = document.createElement('div'); bar.className = 'bar';
     bar.innerHTML = `<span>${dz.name}</span><button class="lk${S.locks.has(i) ? ' locked' : ''}" title="Lock">LOCK</button><button class="dl" title="Download PNG">PNG</button>`;
     card.append(bar);
     card.onclick = (e) => {
       if (e.target.closest('.lk')) { S.locks.has(i) ? S.locks.delete(i) : S.locks.add(i); return render(); }
-      if (e.target.closest('.dl')) return download(cv, dz);
+      if (e.target.closest('.dl')) return download(make(dz, S.ratio, data(i)), dz);
       S.picked = S.picked === i ? -1 : i; render(); renderPacks();
     };
     grid.append(card);
   });
+  $('shuffle').textContent = `SHUFFLE (${n})`;
 }
 
 function download(cv, dz) {
@@ -53,11 +64,19 @@ function download(cv, dz) {
   }, 'image/png');
 }
 
-function loadCover(file) {
+async function loadSlot(slot, el, file) {
   if (!file || !file.type.startsWith('image/')) return;
-  const url = URL.createObjectURL(file), img = new Image();
-  img.onload = () => { S.cover = img; $('drop').style.backgroundImage = `url(${url})`; $('dropTxt').textContent = ''; render(); renderPacks(); };
-  img.src = url;
+  const span = el.querySelector('span'), show = (t) => { span.hidden = false; span.textContent = t; };
+  let img;
+  if (el.hasAttribute('data-cut')) {
+    el.classList.add('busy');
+    try { img = await cutout(file, show); }
+    catch (e) { console.warn(e); show('Cut-out failed, using photo'); img = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = URL.createObjectURL(file); }); }
+    el.classList.remove('busy');
+  } else img = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = URL.createObjectURL(file); });
+  S[slot] = img;
+  el.style.backgroundImage = `url(${img.toDataURL ? img.toDataURL() : img.src})`; span.hidden = true;
+  render(); renderPacks();
 }
 
 // ---- YouTube packages ----
@@ -105,7 +124,7 @@ $('count').onchange = genPacks;
 
 let t;
 const later = () => { clearTimeout(t); t = setTimeout(() => { render(); genPacks(); }, 150); };
-['title', 'label', 'footer', 'accent', 'ep'].forEach((id) => $(id).addEventListener('input', later));
+['title', 'big', 'label', 'footer', 'accent', 'ep'].forEach((id) => $(id).addEventListener('input', later));
 // Type select grouped Music / Video; fields relabel per type.
 const groups = {};
 for (const [id, w] of Object.entries(WORDS)) (groups[w.group] ||= []).push(`<option value="${id}">${w.label || 'Custom'}</option>`);
@@ -122,10 +141,13 @@ $('ratio').onclick = (e) => {
   S.ratio = r; [...$('ratio').children].forEach((b) => b.classList.toggle('on', b.dataset.r === r)); render();
 };
 $('shuffle').onclick = () => { S.seeds = S.seeds.map((s, i) => S.locks.has(i) ? s : seed()); render(); };
-$('cover').onchange = (e) => loadCover(e.target.files[0]);
-const drop = $('drop');
-drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
-drop.ondragleave = () => drop.classList.remove('over');
-drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); loadCover(e.dataTransfer.files[0]); };
+document.querySelectorAll('[data-slot]').forEach((el) => {
+  const slot = el.dataset.slot;
+  el.querySelector('input').onchange = (e) => loadSlot(slot, el, e.target.files[0]);
+  el.ondragover = (e) => { e.preventDefault(); el.classList.add('over'); };
+  el.ondragleave = () => el.classList.remove('over');
+  el.ondrop = (e) => { e.preventDefault(); el.classList.remove('over'); loadSlot(slot, el, e.dataTransfer.files[0]); };
+});
+$('niche').onchange = render;
 
 document.fonts.ready.then(() => { render(); genPacks(); });

@@ -8,6 +8,6 @@ export function make(design, ratio, data, canvas = document.createElement('canva
   canvas.width = W; canvas.height = H;
   const x = canvas.getContext('2d');
   x.reset?.();
-  design.draw(x, W, H, data, makeKit(x, W, H, data));
+  design.draw(x, W, H, data, makeKit(x, W, H, data), design.preset || {});
   return canvas;
 }

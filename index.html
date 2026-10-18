@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thumb Studio</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <header class="top">
   <b class="logo">THUMB<span>STUDIO</span></b>
+  <select id="niche"><option value="*">All styles</option><option value="mrbeast" selected>MrBeast style</option><option value="crime">True crime</option><option value="tech">Tech</option><option value="music">Music</option><option value="gaming">Gaming</option><option value="classic">Classic</option></select>
   <select id="type"></select>
   <div class="seg" id="ratio">
     <button data-r="16:9" class="on">16:9</button><button data-r="9:16">9:16</button>
@@ -17,11 +18,14 @@
 </header>
 <main>
   <aside class="panel" id="panel">
-    <label class="drop" id="drop">
-      <input type="file" id="cover" accept="image/*" hidden>
-      <span id="dropTxt">Drop image (cover, screenshot, photo) or click</span>
-    </label>
+    <div class="drops">
+      <label class="drop" data-slot="cover"><input type="file" accept="image/*" hidden><span>Main image<br><small>cover, screenshot, photo</small></span></label>
+      <label class="drop" data-slot="person" data-cut><input type="file" accept="image/*" hidden><span>Main person<br><small>auto cut-out</small></span></label>
+      <label class="drop" data-slot="person2" data-cut><input type="file" accept="image/*" hidden><span>2nd person<br><small>auto cut-out</small></span></label>
+      <label class="drop" data-slot="item" data-cut><input type="file" accept="image/*" hidden><span>Prop / product<br><small>auto cut-out</small></span></label>
+    </div>
     <label>Title<input id="title" value="I Survived 100 Days"></label>
+    <label>Big words (1–3, for loud styles)<input id="big" placeholder="auto from title"></label>
     <label>Label (custom type)<input id="label" placeholder="auto from type"></label>
     <label>Footer<input id="footer" value="YOURCHANNEL"></label>
     <label>Accent<input id="accent" type="color" value="#e0242f"></label>
@@ -47,6 +51,6 @@
     <section class="packs" id="packs"></section>
   </div>
 </main>
-<script type="module" src="app.js?v=7"></script>
+<script type="module" src="app.js?v=12"></script>
 </body>
 </html>
