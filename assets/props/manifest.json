@@ -1,15 +1,22 @@
 {
  "crime": [
+  "archive-file",
   "badge-wallet",
   "bullets",
   "case-book",
   "case-file",
+  "cassette",
+  "evidence-box",
   "evidence-collage",
   "fbi-badge",
   "fbi-folder",
   "handcuffs",
   "magnifier",
+  "newspaper-bundle",
+  "newspapers",
+  "polaroids",
   "shotgun-shells",
+  "torn-newspaper",
   "vhs"
  ]
 }

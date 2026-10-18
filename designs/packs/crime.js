@@ -212,16 +212,20 @@ function crime(x, W, H, d, K, P) {
 
 // Set dressing with the built-in crime props (assets/props/crime). Uploads (d.item) always win.
 // item: what fills the layout's evidence slot; dress: [name, cx, bottom, h, rot] in frame fractions (wide | tall).
-const EVID = ['handcuffs', 'bullets', 'shotgun-shells', 'vhs', 'fbi-badge', 'badge-wallet'];
+const EVID = ['handcuffs', 'cassette', 'bullets', 'vhs', 'shotgun-shells', 'fbi-badge', 'badge-wallet'];
+const PAPERS = ['newspaper-bundle', 'newspapers', 'torn-newspaper'];
+const FILES = ['archive-file', 'case-file', 'fbi-folder', 'case-book'];
+// A name may be a list: the template's seed picks one, so SHUFFLE varies the set dressing.
 const DRESS = {
+  'MUGSHOT': { wide: [[['badge-wallet', 'fbi-badge'], .84, .74, .28, .12]], tall: [[['badge-wallet', 'fbi-badge'], .76, .32, .1, .12]] },
   'REDACTED FILE': { wide: [['magnifier', .66, 1.02, .55, .35]], tall: [['magnifier', .7, .88, .22, .35]] },
-  'TAPE CROSS': { wide: [['bullets', .12, 1.02, .34, -.2], ['shotgun-shells', .7, 1.04, .36, .15]], tall: [['bullets', .2, .92, .13, -.2], ['shotgun-shells', .72, .94, .14, .15]] },
-  'CASE BOARD': { item: EVID },
-  'EVIDENCE': { item: EVID },
-  'HEADLINE': { wide: [['fbi-badge', .2, 1.02, .52, -.18]], tall: [['fbi-badge', .24, .92, .2, -.18]] },
-  'INTERROGATION': { wide: [['fbi-folder', .27, .96, .32, -.06], ['bullets', .72, .95, .16, .3]], tall: [['fbi-folder', .3, .8, .14, -.06], ['bullets', .72, .8, .07, .3]] },
-  'MUGSHOT': { wide: [['badge-wallet', .84, .74, .28, .12]], tall: [['badge-wallet', .76, .32, .1, .12]] },
-  'SILHOUETTE': { wide: [['case-file', .1, 1.08, .6, -.12]], tall: [['case-file', .18, .97, .26, -.12]] }
+  'TAPE CROSS': { wide: [[['bullets', 'cassette'], .12, 1.02, .3, -.2], [['shotgun-shells', 'polaroids'], .7, 1.04, .34, .15]], tall: [[['bullets', 'cassette'], .2, .92, .12, -.2], [['shotgun-shells', 'polaroids'], .72, .94, .13, .15]] },
+  'SILHOUETTE': { wide: [[FILES, .1, 1.1, .42, -.12]], tall: [[FILES, .18, .97, .26, -.12]] },
+  'CASE BOARD': { item: EVID, wide: [['polaroids', .88, 1.06, .36, .12]], tall: [['polaroids', .76, .95, .14, .12]] },
+  'VICTIM VS SUSPECT': { wide: [[PAPERS, .62, 1.04, .3, .08]], tall: [[PAPERS, .74, .97, .12, .08]] },
+  'EVIDENCE': { item: EVID, wide: [['evidence-box', .14, 1.03, .4, -.04]], tall: [['evidence-box', .2, .96, .15, -.04]] },
+  'HEADLINE': { wide: [[PAPERS, .2, 1.03, .42, -.1]], tall: [[PAPERS, .24, .93, .17, -.1]] },
+  'INTERROGATION': { wide: [[FILES, .27, .97, .34, -.08], [['bullets', 'cassette'], .72, .95, .16, .3]], tall: [[FILES, .3, .81, .15, -.08], [['bullets', 'cassette'], .72, .8, .07, .3]] }
 };
 const T = (name, draw) => ({ name, niche: 'crime', types: ['*'], ratios: ['16:9', '9:16'], draw(x, W, H, d, K, P) {
   const R = DRESS[name] || {}, pr = d.prop || (() => null);
@@ -229,7 +233,7 @@ const T = (name, draw) => ({ name, niche: 'crime', types: ['*'], ratios: ['16:9'
   const U = crime(x, W, H, dd, K, P), end = U.end;
   U.end = (o) => { // dress the set just before the grade so props share the scene's light
     if (!d.item) for (const [n, cx, b, h, rot] of (K.wide ? R.wide : R.tall) || []) {
-      const img = pr('crime', n); if (img) U.prop(img, cx * W, b * H, h * H, { rot, filter: 'contrast(1.1) saturate(.55) brightness(.9)', rim: P.light, rimA: .25, tint: P.bg[1], tintA: .18 });
+      const img = pr('crime', Array.isArray(n) ? n[(d.seed || 0) % n.length] : n); if (img) U.prop(img, cx * W, b * H, h * H, { rot, filter: 'contrast(1.1) saturate(.55) brightness(.9)', rim: P.light, rimA: .25, tint: P.bg[1], tintA: .18 });
     }
     end(o);
   };
