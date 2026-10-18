@@ -17,7 +17,8 @@ function data(i) {
     label: ($('label').value.trim() || lab).toUpperCase(),
     kicker: ($('ep').value.trim() && w.f.ep ? `${kick} · ${w.f.ep.replace('#', $('ep').value.trim())}` : kick).toUpperCase(), footer: $('footer').value.trim(), cover: S.cover, person: S.person, person2: S.person2, item: S.item,
     big: ($('big').value.trim() || $('title').value.trim().split(/\s+/).slice(0, 3).join(' ')).toUpperCase(),
-    accent: $('accent').value, type, seed: S.seeds[i]
+    accent: $('accent').value, type, seed: S.seeds[i] || 1,
+    bpm: w.f.bpm ? $('bpm').value.trim() : '', key: w.f.key ? $('key').value.trim().toUpperCase() : ''
   };
 }
 const fits = (dz, type) => dz.ratios.includes(S.ratio) && (dz.types.includes('*') || dz.types.includes(type)) && ($('niche').value === '*' || dz.niche === $('niche').value);

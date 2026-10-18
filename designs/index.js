@@ -14,6 +14,7 @@ import { POP_PRESETS } from '../core/pop.js';
 import crime, { CRIME_PRESETS } from './packs/crime.js';
 import gaming, { GAME_PRESETS } from './packs/gaming.js';
 import tech, { TECH_PRESETS } from './packs/tech.js';
+import music, { MUSIC_PRESETS } from './packs/music.js';
 
 // A pack layout x its palettes -> one template per combination.
 const expand = (layouts, presets) => presets.flatMap((p) => layouts.map((l) => ({ ...l, name: `${l.name} · ${p.name}`, preset: p })));
@@ -21,4 +22,4 @@ const expand = (layouts, presets) => presets.flatMap((p) => layouts.map((l) => (
 const classic = [spotlight, vinylSpin, polaroid, neon, stack, bleed, halftone, mono, wave, slab, tilt]
   .map((dz) => ({ niche: dz.types.includes('*') ? 'classic' : 'music', ...dz }));
 
-export default [...expand(mrbeast, POP_PRESETS), ...expand(crime, CRIME_PRESETS), ...expand(gaming, GAME_PRESETS), ...expand(tech, TECH_PRESETS), ...classic];
+export default [...expand(mrbeast, POP_PRESETS), ...expand(crime, CRIME_PRESETS), ...expand(gaming, GAME_PRESETS), ...expand(tech, TECH_PRESETS), ...expand(music, MUSIC_PRESETS), ...classic];
