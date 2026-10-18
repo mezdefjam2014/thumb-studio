@@ -64,16 +64,15 @@ export function pop(x, W, H, d, K, P) {
   };
 
   // Placeholder "shocked face" so layouts read before a real cut-out is added.
-  const face = () => {
+  const face = () => { // realistic lit head-and-shoulders silhouette (stand-in until a real face is uploaded)
     const c = document.createElement('canvas'); c.width = 600; c.height = 800; const g = c.getContext('2d');
-    g.fillStyle = P.pop; g.beginPath(); g.roundRect(40, 560, 520, 300, 120); g.fill();
-    g.fillStyle = '#e9b48f'; g.fillRect(250, 470, 100, 110);
-    g.beginPath(); g.ellipse(300, 310, 185, 215, 0, 0, 7); g.fill();
-    g.fillStyle = '#2b1a10'; g.beginPath(); g.ellipse(300, 170, 190, 110, 0, Math.PI, 0); g.fill();
-    for (const ex of [228, 372]) { g.fillStyle = '#fff'; g.beginPath(); g.arc(ex, 300, 40, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(ex, 305, 17, 0, 7); g.fill(); }
-    g.strokeStyle = '#2b1a10'; g.lineWidth = 14; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(185, 225); g.lineTo(265, 212); g.moveTo(335, 212); g.lineTo(415, 225); g.stroke();
-    g.fillStyle = '#5a1010'; g.beginPath(); g.ellipse(300, 430, 58, 66, 0, 0, 7); g.fill();
+    const body = g.createLinearGradient(0, 520, 600, 800); body.addColorStop(0, '#3a3f4a'); body.addColorStop(1, '#14161b');
+    g.fillStyle = body; g.beginPath(); g.moveTo(20, 800); g.bezierCurveTo(30, 610, 150, 560, 230, 545); g.lineTo(370, 545); g.bezierCurveTo(450, 560, 570, 610, 580, 800); g.fill();
+    const skin = g.createRadialGradient(250, 260, 30, 300, 320, 230); skin.addColorStop(0, '#d9a585'); skin.addColorStop(.6, '#a8715a'); skin.addColorStop(1, '#4a2f26');
+    g.fillStyle = skin; g.fillRect(250, 430, 100, 130); g.beginPath(); g.ellipse(300, 300, 150, 190, 0, 0, 7); g.fill();
+    g.fillStyle = '#17110e'; g.beginPath(); g.ellipse(300, 175, 165, 100, 0, Math.PI * .97, Math.PI * 2.03); g.fill();
+    const shade = g.createLinearGradient(150, 0, 450, 0); shade.addColorStop(0, 'rgba(255,255,255,.18)'); shade.addColorStop(.5, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,.45)');
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = shade; g.fillRect(0, 0, 600, 800);
     return c;
   };
 
@@ -198,6 +197,44 @@ export function pop(x, W, H, d, K, P) {
   };
 
   // Shared AAA finish: soft light leak, vignette, fine grain.
+  // Real photo cut-out placed IN the scene: contact shadow, ambient tint, palette rim light.
+  // img may be null -> falls back to fb() (placeholder drawer) so layouts still read.
+  U.prop = (img, cx, bottom, h, o = {}) => {
+    if (!img) return o.fb ? o.fb() : null;
+    const w = h * img.width / img.height, rot = o.rot || 0;
+    if (o.shadow !== false) {
+      x.save(); x.filter = `blur(${16 * u}px)`; x.fillStyle = `rgba(0,0,0,${o.shadowA ?? .55})`;
+      x.beginPath(); x.ellipse(cx, bottom - 4 * u, w * .46, Math.max(10 * u, h * .05), 0, 0, 7); x.fill(); x.restore();
+    }
+    const c = document.createElement('canvas'), pad = 30 * u; c.width = w + pad * 2; c.height = h + pad * 2;
+    const g = c.getContext('2d');
+    g.filter = o.filter || 'contrast(1.08) saturate(1.12)'; g.drawImage(img, pad, pad, w, h); g.filter = 'none';
+    g.globalCompositeOperation = 'source-atop';
+    if (o.tint !== false) { g.globalAlpha = o.tintA ?? .14; g.fillStyle = o.tint || P.bg[1]; g.fillRect(0, 0, c.width, c.height); }
+    const rimC = o.rim ?? P.pop;
+    if (rimC) { // light wrap from one side
+      const lg = g.createLinearGradient(o.rimLeft ? 0 : c.width, 0, o.rimLeft ? c.width * .45 : c.width * .55, 0);
+      lg.addColorStop(0, rimC); lg.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = o.rimA ?? .45; g.globalCompositeOperation = 'source-atop'; g.fillStyle = lg; g.fillRect(0, 0, c.width, c.height);
+    }
+    const sh = g.createLinearGradient(0, pad, 0, pad + h); sh.addColorStop(.55, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.35)');
+    g.globalAlpha = 1; g.fillStyle = sh; g.fillRect(0, 0, c.width, c.height);
+    x.save(); x.translate(cx, bottom - h / 2); x.rotate(rot); if (o.flip) x.scale(-1, 1);
+    x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 30 * u; x.shadowOffsetY = 12 * u;
+    x.drawImage(c, -c.width / 2, -c.height / 2); x.restore();
+    return { cx, top: bottom - h, w, h };
+  };
+
+  // Cinematic grade: bloom from highlights, split-tone (shadows -> palette dark, highlights warm), S-curve.
+  U.grade = (o = {}) => {
+    const c = document.createElement('canvas'); c.width = W / 4; c.height = H / 4;
+    const g = c.getContext('2d'); g.filter = `blur(${6 * u}px) brightness(1.3)`; g.drawImage(x.canvas, 0, 0, c.width, c.height);
+    x.save(); x.globalCompositeOperation = 'screen'; x.globalAlpha = o.bloom ?? .22; x.drawImage(c, 0, 0, W, H);
+    x.globalCompositeOperation = 'soft-light'; x.globalAlpha = o.tone ?? .3;
+    const t = x.createLinearGradient(0, H, W, 0); t.addColorStop(0, P.bg[1]); t.addColorStop(1, o.warm || '#ffd9a0'); x.fillStyle = t; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = 'overlay'; x.globalAlpha = o.curve ?? .12; x.fillStyle = '#808080'; x.fillRect(0, 0, W, H);
+    x.restore();
+  };
+
   U.finish = (o = {}) => {
     x.save(); x.globalCompositeOperation = 'screen';
     U.glow(W * (o.lx ?? .85), H * (o.ly ?? .1), Math.max(W, H) * .45, P.bg[0], .22); x.restore();
