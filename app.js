@@ -55,15 +55,27 @@ function render() {
   $('shuffle').textContent = `SHUFFLE (${n})`;
 }
 
-function download(cv, dz) {
+// Downloads: a chosen folder (FOLDER button) saves straight in; otherwise a Save-as window each time.
+// Browsers without the file pickers (Firefox, Safari) fall back to their normal download.
+let saveDir = null;
+async function download(cv, dz) {
   const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  cv.toBlob((b) => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b);
-    a.download = `${slug($('title').value || 'thumb')}-${slug(dz.name)}-${S.ratio.replace(':', 'x')}.png`;
-    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  }, 'image/png');
+  const name = `${slug($('title').value || 'thumb')}-${slug(dz.name)}-${S.ratio.replace(':', 'x')}.png`;
+  const blob = await new Promise((ok) => cv.toBlob(ok, 'image/png'));
+  try {
+    let fh;
+    if (saveDir) fh = await saveDir.getFileHandle(name, { create: true });
+    else if (window.showSaveFilePicker) fh = await showSaveFilePicker({ suggestedName: name, types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }] });
+    if (fh) { const w = await fh.createWritable(); await w.write(blob); await w.close(); return; }
+  } catch (e) { if (e.name === 'AbortError') return; console.warn(e); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
+$('folder').hidden = !window.showDirectoryPicker;
+$('folder').onclick = async () => {
+  try { saveDir = await showDirectoryPicker({ mode: 'readwrite' }); $('folder').textContent = 'FOLDER: ' + saveDir.name; $('folder').title = 'Downloads save here. Reload the page to go back to Save-as.'; }
+  catch (e) { if (e.name !== 'AbortError') console.warn(e); }
+};
 
 async function loadSlot(slot, el, file) {
   if (!file || !file.type.startsWith('image/')) return;
