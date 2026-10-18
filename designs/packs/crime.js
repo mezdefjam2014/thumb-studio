@@ -210,7 +210,31 @@ function crime(x, W, H, d, K, P) {
   return U;
 }
 
-const T = (name, draw) => ({ name, niche: 'crime', types: ['*'], ratios: ['16:9', '9:16'], draw(x, W, H, d, K, P) { draw(x, W, H, d, crime(x, W, H, d, K, P), K.wide, P); } });
+// Set dressing with the built-in crime props (assets/props/crime). Uploads (d.item) always win.
+// item: what fills the layout's evidence slot; dress: [name, cx, bottom, h, rot] in frame fractions (wide | tall).
+const EVID = ['handcuffs', 'bullets', 'shotgun-shells', 'vhs', 'fbi-badge', 'badge-wallet'];
+const DRESS = {
+  'REDACTED FILE': { wide: [['magnifier', .66, 1.02, .55, .35]], tall: [['magnifier', .7, .88, .22, .35]] },
+  'TAPE CROSS': { wide: [['bullets', .12, 1.02, .34, -.2], ['shotgun-shells', .7, 1.04, .36, .15]], tall: [['bullets', .2, .92, .13, -.2], ['shotgun-shells', .72, .94, .14, .15]] },
+  'CASE BOARD': { item: EVID },
+  'EVIDENCE': { item: EVID },
+  'HEADLINE': { wide: [['fbi-badge', .2, 1.02, .52, -.18]], tall: [['fbi-badge', .24, .92, .2, -.18]] },
+  'INTERROGATION': { wide: [['fbi-folder', .27, .96, .32, -.06], ['bullets', .72, .95, .16, .3]], tall: [['fbi-folder', .3, .8, .14, -.06], ['bullets', .72, .8, .07, .3]] },
+  'MUGSHOT': { wide: [['badge-wallet', .84, .74, .28, .12]], tall: [['badge-wallet', .76, .32, .1, .12]] },
+  'SILHOUETTE': { wide: [['case-file', .1, 1.08, .6, -.12]], tall: [['case-file', .18, .97, .26, -.12]] }
+};
+const T = (name, draw) => ({ name, niche: 'crime', types: ['*'], ratios: ['16:9', '9:16'], draw(x, W, H, d, K, P) {
+  const R = DRESS[name] || {}, pr = d.prop || (() => null);
+  const dd = R.item && !d.item ? { ...d, item: pr('crime', R.item[(d.seed || 0) % R.item.length]) } : d;
+  const U = crime(x, W, H, dd, K, P), end = U.end;
+  U.end = (o) => { // dress the set just before the grade so props share the scene's light
+    if (!d.item) for (const [n, cx, b, h, rot] of (K.wide ? R.wide : R.tall) || []) {
+      const img = pr('crime', n); if (img) U.prop(img, cx * W, b * H, h * H, { rot, filter: 'contrast(1.1) saturate(.55) brightness(.9)', rim: P.light, rimA: .25, tint: P.bg[1], tintA: .18 });
+    }
+    end(o);
+  };
+  draw(x, W, H, dd, U, K.wide, P);
+} });
 const STOP = /^(OF|THE|A|AN|IN|AT|TO|AND|ON|FOR|WITH|BY|FROM)$/i;
 const hook = (d, n = 3) => { const w = d.big.split(/\s+/).filter(Boolean).slice(0, n); while (w.length > 1 && STOP.test(w[w.length - 1])) w.pop(); return w.join(' '); };
 const longest = (d) => d.big.split(/\s+/).sort((a, b) => b.length - a.length)[0];

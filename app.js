@@ -4,6 +4,7 @@ import { makePackage } from './core/package.js';
 import { tagLen } from './core/tags.js';
 import { rng } from './core/kit.js';
 import { cutout } from './core/cutout.js';
+import { loadProps, prop } from './core/props.js';
 
 import { WORDS } from './core/words.js';
 const $ = (id) => document.getElementById(id);
@@ -17,7 +18,7 @@ function data(i) {
     label: ($('label').value.trim() || lab).toUpperCase(),
     kicker: ($('ep').value.trim() && w.f.ep ? `${kick} · ${w.f.ep.replace('#', $('ep').value.trim())}` : kick).toUpperCase(), footer: $('footer').value.trim(), cover: S.cover, person: S.person, person2: S.person2, item: S.item,
     big: ($('big').value.trim() || $('title').value.trim().split(/\s+/).slice(0, 3).join(' ')).toUpperCase(),
-    accent: $('accent').value, type, seed: S.seeds[i] || 1,
+    accent: $('accent').value, type, seed: S.seeds[i] || 1, prop,
     bpm: w.f.bpm ? $('bpm').value.trim() : '', key: w.f.key ? $('key').value.trim().toUpperCase() : ''
   };
 }
@@ -151,4 +152,4 @@ document.querySelectorAll('[data-slot]').forEach((el) => {
 });
 $('niche').onchange = render;
 
-document.fonts.ready.then(() => { render(); genPacks(); });
+Promise.all([document.fonts.ready, loadProps()]).then(() => { render(); genPacks(); });
