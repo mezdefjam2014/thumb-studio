@@ -115,6 +115,31 @@ function crime(x, W, H, d, K, P) {
     x.save(); x.translate(b.x + b.w / 2, b.y + b.h / 2); x.rotate(rot);
     x.shadowColor = 'rgba(0,0,0,.75)'; x.shadowBlur = 40 * u; x.shadowOffsetY = 18 * u; x.shadowOffsetX = 8 * u; x.drawImage(c, -b.w / 2, -b.h / 2); x.restore();
   };
+  // Print a photo realistically into a rect: 'news' = halftone dots in ink, 'photo' = faded film print with grain + inner shadow.
+  U.print = (img, r, mode = 'photo') => {
+    const [c, g] = cv(Math.max(2, r.w), Math.max(2, r.h));
+    if (mode === 'news') {
+      const [t, tg] = cv(r.w, r.h); tg.filter = 'grayscale(1) contrast(1.35) brightness(1.08)'; cover2(tg, img, r.w, r.h);
+      const W2 = t.width, H2 = t.height, px = tg.getImageData(0, 0, W2, H2).data, cell = Math.max(2.5, 3.2 * u);
+      g.fillStyle = '#ebe6da'; g.fillRect(0, 0, r.w, r.h); g.fillStyle = '#141414';
+      for (let yy = 0, row = 0; yy < r.h; yy += cell, row++) for (let xx = (row % 2) * cell / 2; xx < r.w; xx += cell) {
+        const i = ((Math.min(H2 - 1, yy | 0) * W2) + Math.min(W2 - 1, xx | 0)) * 4, lum = px[i] / 255, rad = cell * .62 * Math.sqrt(1 - lum);
+        if (rad > .25) { g.beginPath(); g.arc(xx, yy, rad, 0, 7); g.fill(); }
+      }
+      x.save(); x.globalCompositeOperation = 'multiply'; x.globalAlpha = .92; x.filter = `blur(${.35 * u}px)`; x.drawImage(c, r.x, r.y, r.w, r.h); x.restore();
+      return;
+    }
+    g.filter = 'saturate(.65) sepia(.28) contrast(1.06) brightness(.94)'; cover2(g, img, r.w, r.h); g.filter = 'none';
+    const ish = g.createRadialGradient(r.w / 2, r.h / 2, Math.min(r.w, r.h) * .35, r.w / 2, r.h / 2, Math.hypot(r.w, r.h) * .62);
+    ish.addColorStop(0, 'rgba(0,0,0,0)'); ish.addColorStop(1, 'rgba(20,12,6,.55)'); g.fillStyle = ish; g.fillRect(0, 0, r.w, r.h);
+    for (let i = 0; i < r.w * r.h / 90; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '0,0,0' : '255,240,220'},${Math.random() * .08})`; g.fillRect(Math.random() * r.w, Math.random() * r.h, 1.4, 1.4); }
+    const sh = g.createLinearGradient(0, 0, r.w, r.h); sh.addColorStop(.25, 'rgba(255,255,255,0)'); sh.addColorStop(.45, 'rgba(255,255,255,.12)'); sh.addColorStop(.6, 'rgba(255,255,255,0)'); g.fillStyle = sh; g.fillRect(0, 0, r.w, r.h);
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; g.strokeRect(1, 1, r.w - 2, r.h - 2);
+    x.drawImage(c, r.x, r.y, r.w, r.h);
+  };
+  const cover2 = (g, img, w2, h2) => { const k = Math.max(w2 / img.width, h2 / img.height); g.drawImage(img, (w2 - img.width * k) / 2, (h2 - img.height * k) / 2, img.width * k, img.height * k); };
+  U.fit = (img, b) => { const a = img.width / img.height, w = Math.min(b.w, b.h * a), h = w / a; return { x: b.x + (b.w - w) / 2, y: b.y + (b.h - h) / 2, w, h }; };
+  U.real = (img, b, rot, fn) => { const f = U.fit(img, b); U.on(f, rot, (l) => { x.save(); x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 34 * u; x.shadowOffsetY = 14 * u; x.drawImage(img, 0, 0, l.w, l.h); x.restore(); if (fn) { x.save(); x.globalCompositeOperation = 'multiply'; fn(l); x.restore(); } }); return f; };
   U.on = (b, rot, fn) => { x.save(); x.translate(b.x + b.w / 2, b.y + b.h / 2); x.rotate(rot); x.translate(-b.w / 2, -b.h / 2); fn({ x: 0, y: 0, w: b.w, h: b.h }); x.restore(); };
   U.lines = (b, lh = 24, col = 'rgba(40,30,20,.42)') => { x.fillStyle = col; for (let y = b.y; y < b.y + b.h; y += lh * u) { let px = b.x; const end = b.x + b.w * (.6 + r() * .4); while (px < end) { const ww = (14 + r() * 40) * u; x.fillRect(px, y, Math.min(ww, end - px), lh * u * .3); px += ww + 7 * u; } } };
   U.redact = (b, n = 4) => { const hh = Math.min(b.h / n * .62, H * .05); for (let i = 0; i < n; i++) { const ww = b.w * (.4 + r() * .6), bx = b.x + r() * (b.w - ww), by = b.y + i * (b.h / n); x.fillStyle = '#0b0b0c'; x.beginPath(); x.roundRect(bx, by, ww, hh, 2 * u); x.fill(); x.fillStyle = 'rgba(255,255,255,.06)'; x.fillRect(bx + 4 * u, by + 3 * u, ww * .7, 2 * u); } };
@@ -233,11 +258,12 @@ const BG = { // background plates (assets/props/crime-bg) per layout; the seed p
 };
 const DRESS = {
   'MUGSHOT': { wide: [[['badge-wallet', 'fbi-badge'], .84, .74, .28, .12]], tall: [[['badge-wallet', 'fbi-badge'], .76, .32, .1, .12]] },
-  'REDACTED FILE': { wide: [['magnifier', .66, 1.02, .55, .35]], tall: [['magnifier', .7, .88, .22, .35]] },
+  'REDACTED FILE': { wide: [['magnifier', .52, 1.06, .46, .35]], tall: [['magnifier', .7, .88, .22, .35]] },
   'TAPE CROSS': { wide: [[['bullets', 'cassette'], .12, 1.02, .3, -.2], [['shotgun-shells', 'polaroids'], .7, 1.04, .34, .15]], tall: [[['bullets', 'cassette'], .2, .92, .12, -.2], [['shotgun-shells', 'polaroids'], .72, .94, .13, .15]] },
   'SILHOUETTE': { wide: [[FILES, .1, 1.1, .42, -.12]], tall: [[FILES, .18, .97, .26, -.12]] },
   'CASE BOARD': { item: EVID, wide: [['polaroids', .88, 1.06, .36, .12]], tall: [['polaroids', .76, .95, .14, .12]] },
-  'VICTIM VS SUSPECT': { wide: [[PAPERS, .62, 1.04, .3, .08]], tall: [[PAPERS, .74, .97, .12, .08]] },
+  'VICTIM VS SUSPECT': { wide: [[[...PAPERS, 'envelope-photo'], .62, 1.04, .3, .08]], tall: [[[...PAPERS, 'envelope-photo'], .74, .97, .12, .08]] },
+  'THE LOCATION': { wide: [[['envelope-postcard', 'envelope-photo'], .86, 1.04, .44, .1]], tall: [[['envelope-postcard', 'envelope-photo'], .76, .96, .17, .1]] },
   'EVIDENCE': { item: EVID, wide: [['evidence-box', .14, 1.03, .4, -.04]], tall: [['evidence-box', .2, .96, .15, -.04]] },
   'HEADLINE': { wide: [[PAPERS, .2, 1.03, .42, -.1]], tall: [[PAPERS, .24, .93, .17, -.1]] },
   'INTERROGATION': { wide: [[FILES, .27, .97, .34, -.08], [['bullets', 'cassette'], .72, .95, .16, .3]], tall: [[FILES, .3, .81, .15, -.08], [['bullets', 'cassette'], .72, .8, .07, .3]] }
@@ -277,17 +303,40 @@ export default [
     U.room({ photo: false, lx: .2, ly: .1, la: .6 });
     for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(0,0,0,${U.r() * .12})`; x.fillRect(0, U.r() * H, W, (1 + U.r() * 4) * U.u); }
     const fb = U.box(w ? [.08, .03, .66, .96] : [.1, .08, .84, .72]), sb = U.box(w ? [.05, .07, .64, .98] : [.06, .11, .82, .7]);
-    U.sheet(fb, .035, '#c7a46a', { creases: false }); U.sheet(sb, -.012);
-    U.on(sb, -.012, (b) => {
+    const paper = d.prop?.('crime', 'blank-paper'), pol = d.prop?.('crime', 'blank-polaroids');
+    if (paper) U.real(paper, sb, -.012, (l) => { // print onto the front sheet (x 20-88%, y 24-92% of the photo)
+      const b = { w: l.w * .66, h: l.h * .66 }; x.translate(l.w * .21, l.h * .25);
+      U.label('CASE FILE  No. 07-4471', 0, b.h * .03, w ? 12 : 10, '#2a2219', { a: .8, bold: true });
+      x.fillStyle = 'rgba(40,30,20,.5)'; x.fillRect(0, b.h * .1, b.w * .9, 2 * U.u);
+      U.title(hook(d), { x: 0, y: b.h * .14, w: b.w * .9, h: b.h * .26 }, { font: TYPE, weight: 'bold', fill: '#151311', stroke: 'transparent', sw: 0, hi: '#b3121b' });
+      U.lines({ x: 0, y: b.h * .48, w: b.w * .85, h: b.h * .45 }); U.redact({ x: 0, y: b.h * .49, w: b.w * .82, h: b.h * .38 }, 4);
+    });
+    else { U.sheet(fb, .035, '#c7a46a', { creases: false }); U.sheet(sb, -.012); }
+    if (!paper) U.on(sb, -.012, (b) => {
       U.label('CASE FILE  No. 07-4471', b.w * .06, b.h * .06, w ? 13 : 11, '#2a2219', { a: .8, bold: true });
       x.fillStyle = 'rgba(40,30,20,.5)'; x.fillRect(b.w * .06, b.h * .1, b.w * .88, 2 * U.u);
       U.title(hook(d), { x: b.w * .06, y: b.h * .13, w: b.w * (w ? .56 : .5), h: b.h * (w ? .2 : .15) }, { font: TYPE, weight: 'bold', fill: '#151311', stroke: 'transparent', sw: 0, hi: '#b3121b' });
       U.lines({ x: b.w * .06, y: b.h * .4, w: b.w * .6, h: b.h * .5 });
       U.redact({ x: b.w * .06, y: b.h * .41, w: b.w * .58, h: b.h * .42 }, 5);
     });
-    const pc = w ? [.62 * W, .5 * H, .25 * W] : [.68 * W, .34 * H, .34 * W];
-    U.polaroid(d.person || d.cover, pc[0], pc[1], pc[2], .06, 'J. DOE');
-    x.save(); x.strokeStyle = '#9aa0a8'; x.lineWidth = 3 * U.u; x.beginPath(); x.roundRect(pc[0] - pc[2] * .1, pc[1] - pc[2] * .72, pc[2] * .1, pc[2] * .32, 6 * U.u); x.stroke(); x.restore();
+    const pc = w ? [.82 * W, .42 * H, .2 * W] : [.68 * W, .34 * H, .34 * W];
+    if (pol) { // real blank polaroid stack; subject composited into the top frame's window (x 13-76%, y 14-62%)
+      const pw = pc[2] * 1.05;
+      U.real(pol, { x: pc[0] - pw / 2, y: pc[1] - pw * .62, w: pw, h: pw * 1.25 }, .06);
+      const f = U.fit(pol, { x: pc[0] - pw / 2, y: pc[1] - pw * .62, w: pw, h: pw * 1.25 });
+      U.on(f, .06, (l) => {
+        const win = { x: l.w * .13, y: l.h * .14, w: l.w * .63, h: l.h * .48 };
+        x.save(); x.beginPath(); x.rect(win.x, win.y, win.w, win.h); x.clip(); x.globalAlpha = .9;
+        const img = d.person || d.cover;
+        if (img) { x.globalAlpha = 1; U.print(img, win, 'photo'); }
+        else { x.fillStyle = 'rgba(15,12,10,.75)'; x.beginPath(); x.ellipse(win.x + win.w / 2, win.y + win.h * .42, win.w * .17, win.h * .22, 0, 0, 7); x.fill(); x.beginPath(); x.ellipse(win.x + win.w / 2, win.y + win.h * 1.05, win.w * .42, win.h * .4, 0, 0, 7); x.fill(); }
+        x.restore();
+        x.fillStyle = 'rgba(30,25,20,.85)'; x.font = `${l.h * .07}px "Segoe Print", "Bradley Hand", cursive`; x.textAlign = 'center'; x.fillText('J. DOE', win.x + win.w / 2, l.h * .76);
+      });
+    } else {
+      U.polaroid(d.person || d.cover, pc[0], pc[1], pc[2], .06, 'J. DOE');
+      x.save(); x.strokeStyle = '#9aa0a8'; x.lineWidth = 3 * U.u; x.beginPath(); x.roundRect(pc[0] - pc[2] * .1, pc[1] - pc[2] * .72, pc[2] * .1, pc[2] * .32, 6 * U.u); x.stroke(); x.restore();
+    }
     U.stamp('CLASSIFIED', w ? .5 * W : .44 * W, w ? .2 * H : .62 * H, w ? 40 : 30, -.14, '#b3121b', { mul: true, a: .95 });
     U.haze(.12);
     U.end({ lx: .2, ly: 0 });
@@ -418,8 +467,18 @@ export default [
   T('HEADLINE', (x, W, H, d, U, w, P) => {
     U.room({ lx: .3, ly: .3, la: .55 }); U.haze(.12);
     const pb = U.box(w ? [.04, .1, .6, .78] : [.06, .09, .84, .44]), rot = -.025;
-    U.sheet(pb, rot, '#e4dac3');
-    U.on(pb, rot, (b) => {
+    const np = d.prop?.('crime', 'blank-newspaper');
+    if (np) U.real(np, pb, rot, (l) => {
+      const b = { w: l.w * .84, h: l.h * .43 }; x.translate(l.w * .11, l.h * .27);
+      x.save(); x.globalCompositeOperation = 'source-over'; U.title(hook(d, 4), { x: 0, y: -b.h * .02, w: b.w, h: b.h * .42 }, { font: SERIF, weight: 'bold', fill: '#0c0c0c', stroke: 'transparent', sw: 0, align: 'center', hi: '#a3111a' }); x.restore();
+      x.fillStyle = '#121212'; x.fillRect(0, b.h * .43, b.w, 2 * U.u);
+      const ph = { x: 0, y: b.h * .48, w: b.w * .44, h: b.h * .5 };
+      if (d.cover) U.print(d.cover, ph, 'news');
+      else { x.save(); x.beginPath(); x.rect(ph.x, ph.y, ph.w, ph.h); x.clip(); x.fillStyle = '#5a5a5a'; x.fillRect(ph.x, ph.y, ph.w, ph.h); x.fillStyle = '#2a2a2a'; x.beginPath(); x.ellipse(ph.x + ph.w / 2, ph.y + ph.h * .42, ph.w * .14, ph.h * .2, 0, 0, 7); x.fill(); x.beginPath(); x.ellipse(ph.x + ph.w / 2, ph.y + ph.h * 1.02, ph.w * .36, ph.h * .38, 0, 0, 7); x.fill(); x.restore(); }
+      U.lines({ x: b.w * .5, y: b.h * .47, w: b.w * .23, h: b.h * .48 }, 11); U.lines({ x: b.w * .76, y: b.h * .47, w: b.w * .23, h: b.h * .48 }, 11);
+    });
+    else U.sheet(pb, rot, '#e4dac3');
+    if (!np) U.on(pb, rot, (b) => {
       x.fillStyle = '#121212'; x.textAlign = 'center'; x.textBaseline = 'middle';
       x.font = `bold ${b.h * .09}px ${SERIF}`; x.fillText('The Daily Record', b.w / 2, b.h * .08);
       x.fillRect(b.w * .04, b.h * .14, b.w * .92, 3 * U.u); x.fillRect(b.w * .04, b.h * .185, b.w * .92, 1 * U.u);
